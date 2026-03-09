@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)];
+  }
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-sm border border-white/10 shadow-[0_4px_16px_0_rgba(0,0,0,0.2)];
+  }
+}
+
+:root {
+  --background: #0B1021;
+  --foreground: #F8FAFC;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
