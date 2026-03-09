@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: groww-fact-engine-api
+    env: python
+    buildCommand: "./render-build.sh"
+    startCommand: "uvicorn phase3_api.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.13
+      - key: PLAYWRIGHT_BROWSERS_PATH
+        value: "/opt/render/project/playwright"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false

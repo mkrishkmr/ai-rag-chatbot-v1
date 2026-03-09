@@ -1,0 +1,21 @@
+# Environments
+.env
+.env.local
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+.next/
+out/
+build/
+.DS_Store
+
+# ChromaDB
+chroma_db/
+
+# Playwright
+*.pdf
+.pytest_cache/
