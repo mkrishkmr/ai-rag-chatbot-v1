@@ -1,47 +1,59 @@
-# Groww Mutual Fund RAG Chatbot
+# Groww AI Fact Engine 💰🤖
 
-This project contains the complete 4-phase factual RAG architecture designed for Render and Vercel.
+A complete, end-to-end Retrieval-Augmented Generation (RAG) chatbot designed exclusively to provide strict, verified facts on Groww Mutual Funds. 
 
-## Features
-1. **Phase 1: Ingestion & Verified Data Engine** (`phase1_ingestion/`)
-   - Uses Playwright to asynchronously scrape dynamic metrics (NAV, Expense Ratios) from Groww URLs.
-   - Uses PyMuPDF to parse rules from official SID/KIM PDFs.
-2. **Phase 2: RAG & Hybrid Knowledge Base** (`phase2_rag/`)
-   - Embeds findings into a local ChromaDB instance using LangChain and OpenAI `text-embedding-3-small`.
-   - Utilizes Hybrid Retrieval routing to prioritize web documents for metrics and PDF documents for rules based on the user's query intent.
-3. **Phase 3: Facts-Only API & Guardrails** (`phase3_api/`)
-   - A FastAPI backend providing streaming chat endpoints.
-   - Contains a strict Regex PII filter (blocks PAN and Aadhaar) and a system prompt forbidding investment advice.
-4. **Phase 4: World-Class 'Glassmorphism' UI** (`phase4_frontend/`)
-   - A Next.js dashboard featuring a dark FinTech aesthetic, frosted glass cards, Trust Indicators, and Quick Ask chips.
+Built with **FastAPI**, **Next.js**, **Playwright**, and **ChromaDB**, and powered by **Groq** (`llama-3.1-8b-instant`) and **Google Gemini** embeddings.
 
-## Local Setup & Testing
+---
 
-### 1. Environment Variables
-Rename `.env.example` to `.env` in the root directory and add your keys:
-```
-OPENAI_API_KEY=your_actual_key
-```
+## 🏗️ Architecture
 
-### 2. Install Dependencies
+The application is structured into four distinct execution phases:
+
+1. **Phase 1 (Ingestion):** Playwright dynamically scrapes real-time mutual fund metrics (NAV, AUM, Expense Ratio) from Groww, while PyMuPDF parses the raw SID/KIM PDFs for hard rules (Exit Loads, Lock-ins).
+2. **Phase 2 (RAG & Knowledge Base):** The extracted data is unified, chunked, and embedded into local ChromaDB vectors using Gemini's `models/gemini-embedding-001`.
+3. **Phase 3 (Facts-Only API):** A FastAPI server exposes `/api/chat` with strict regex-based PII Guardrails (blocking PAN/Aadhaar) and strict LLM system prompts against giving financial advice.
+4. **Phase 4 (Glassmorphism Next.js UI):** A polished React app utilizing TailwindCSS for frosted-glass aesthetics, streaming Server-Sent Events from the backend.
+
+*(See `ARCHITECTURE.md` for the full technical data flow).*
+
+---
+
+## 📚 Source Data
+
+This knowledge base is strictly partitioned to factual details mapped from these official 4 funds on Groww:
+- **Groww Nifty 50 Index Fund Direct Growth**
+- **Groww Value Fund Direct Growth**
+- **Groww Aggressive Hybrid Fund Direct Growth**
+- **Groww ELSS Tax Saver Fund Direct Growth**
+
+### Sample Q&A
+
+**Q: What is the Exit Load for the Value Fund?**
+> A: The exit load for Groww Value Fund Direct Growth is 0.005% (from July 1st, 2020) as a stamp duty on investment. [View Source]
+
+**Q: How do the NAVs compare?**
+> A: The Groww Nifty 50 Index Fund has an NAV of ₹10.23, while the Groww ELSS Tax Saver Fund has an NAV of ₹12.45. [View Source]
+
+**Q: What is the minimum SIP for each fund?**
+> A: 
+> * Groww Value Fund Direct Growth: ₹500
+> * Groww Aggressive Hybrid Fund Direct Growth: ₹500
+> * Groww ELSS Tax Saver Fund Direct Growth: ₹500
+
+---
+
+## ⚠️ Disclaimer
+
+This application is built for educational and technical demonstration purposes only. The LLM is actively instructed **not to provide investment advice**. Always perform independent research or consult a SEBI-registered advisory professional before making financial investments. The data shown here is retrieved dynamically from web properties and may be subject to parsing inaccuracies. 
+
+---
+
+## 🚀 Execution & Deployment
+
+To run this locally, use the provided bash script which launches both the Python and Node.js environments:
 ```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-playwright install chromium --with-deps
+./start.sh
 ```
 
-### 3. Run the Backend (FastAPI)
-```bash
-uvicorn phase3_api.main:app --host 0.0.0.0 --port 8080 --reload
-```
-*Note: Before chatting, hit the `/api/sync` endpoint using cURL or Postman to scrape and ingest the initial data into ChromaDB!*
-
-### 4. Run the Frontend (Next.js)
-In a new terminal:
-```bash
-cd phase4_frontend
-npm install
-npm run dev
-```
-Open `http://localhost:3000` to interact with the Glassmorphism UI.
+For Cloud Deployment, refer to the step-by-step CI/CD guides in `DEPLOYMENT.md` for seamless routing to Render (Backend) and Vercel (Frontend).

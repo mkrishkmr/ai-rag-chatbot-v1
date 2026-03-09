@@ -1,0 +1,44 @@
+# Architecture Overview
+
+This document outlines the technical flow of the Groww AI Fact Engine. 
+
+## High-Level Diagram
+
+```mermaid
+graph TD
+    A[Playwright Scraper] -->|Extracts NAV, Expense Ratios| D(Unified JSON Document)
+    B[PyMuPDF Parser] -->|Extracts SID PDF Constraints| D
+    
+    D --> E[LangChain Document Splitter]
+    E --> F[ChromaDB Vector Store]
+    F -->|Google Gemini Vector Embeddings| F
+    
+    G[Next.js Glassmorphism UI] -->|Sends Question| H[FastAPI Endpoint]
+    
+    H --> I{PII Guardrail Check}
+    I -->|Valid| J[Vector Retrieval]
+    I -->|Contains PAN/Aadhaar| K[HTTP 400 Block]
+    
+    J --> L[Groq Llama-3.1 API]
+    L -->|Streams Answer| G
+```
+
+## Component Breakdown
+
+### 1. The Ingestion Engine (`phase1_ingestion`)
+Because Groww is a modern React/Next.js Single Page Application, standard `requests` libraries cannot see the DOM. We use `Playwright` acting as a headless browser to mount the DOM and extract the metric nodes. We use `PyMuPDF` to parse the highly-structured tables inside the Scheme Information Documents (SIDs).
+
+### 2. The Vector Database (`phase2_rag`)
+We use `ChromaDB` for lightweight, on-disk storage inside `chroma_db/`. We use Google's Generative AI `gemini-embedding-001` model to create the vector embeddings instead of OpenAI or heavy local HuggingFace transformers. 
+
+**Hybrid Prioritization**: The retriever is explicitly built with LangChain to prioritize Web document chunks when the query relates to rapidly-changing metrics (NAV, Fund Size), and PDF document chunks when the query relates to static rules (Exit Loads, Constraints).
+
+### 3. The Backend (`phase3_api`)
+We use `FastAPI` configured to `0.0.0.0` and listening on the dynamic `$PORT` environment variable to ensure Render health-check compatibilities. 
+
+**Guardrails (`guardrails.py`)**: 
+* Enforces regex checks for standard Indian Tax Identifiers (PAN) and Social Identifiers (Aadhaar).
+* Injects a strict System Prompt forcing concise lists and forbidding advisory.
+
+### 4. The Frontend (`frontend` directory)
+We use `Next.js 14` with App Router. The `page.tsx` client component uses `TextDecoder` to parse the Server-Sent Event (SSE) stream returned by FastAPI in real-time. The UI utilizes custom `--glass-bg` TailwindCSS variables for a premium Fintech aesthetic.
