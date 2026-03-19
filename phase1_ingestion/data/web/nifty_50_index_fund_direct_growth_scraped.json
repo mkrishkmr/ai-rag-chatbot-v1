@@ -1,0 +1,364 @@
+{
+  "fund_name": "Groww Nifty 50 Index Fund Direct Growth",
+  "fund_slug": "nifty_50_index_fund_direct_growth",
+  "source_url": "https://groww.in/mutual-funds/groww-nifty-50-index-fund-direct-growth",
+  "scraped_at": "2026-03-14T06:18:43.214822+00:00",
+  "identity": {
+    "category": "Equity",
+    "fund_house": "Groww Mutual Fund",
+    "amc_rank_india": "#41 in India",
+    "launch_date": "10 Apr 2008",
+    "benchmark": "NIFTY 50 Total Return Index",
+    "investment_objective": "The scheme seeks to generate long-term capital growth by investing in securities of the Nifty 50 Index in the same proportion/weightage with an aim to provide returns before expenses that track the total return of Nifty 50 Index, subject to tracking errors."
+  },
+  "live_metrics": {
+    "nav": "9.24",
+    "fund_size_cr": "20.22",
+    "expense_ratio_pct": "0.30"
+  },
+  "investment_limits": {
+    "min_first_investment": "500",
+    "min_second_investment": "500",
+    "min_sip": "500"
+  },
+  "returns": {
+    "annualised": {},
+    "category_average": {},
+    "rank_in_category": {},
+    "return_calculator_example": {
+      "type": "Monthly SIP",
+      "monthly_investment": "500",
+      "total_investment": null,
+      "would_become": null,
+      "historic_returns_pct": "returns"
+    }
+  },
+  "costs_and_taxation": {
+    "exit_load": "Nil",
+    "stamp_duty": "from July 1st 2020"
+  },
+  "fund_managers": [],
+  "holdings": {
+    "total_count": 51,
+    "stocks": [
+      {
+        "name": "HDFC Bank Ltd.",
+        "sector": "Financial",
+        "instrument": "Equity",
+        "allocation_pct": "12.28"
+      },
+      {
+        "name": "ICICI Bank Ltd.",
+        "sector": "Financial",
+        "instrument": "Equity",
+        "allocation_pct": "8.36"
+      },
+      {
+        "name": "Reliance Industries Ltd.",
+        "sector": "Energy",
+        "instrument": "Equity",
+        "allocation_pct": "8.14"
+      },
+      {
+        "name": "Infosys Ltd.",
+        "sector": "Technology",
+        "instrument": "Equity",
+        "allocation_pct": "4.96"
+      },
+      {
+        "name": "Bharti Airtel Ltd.",
+        "sector": "Communication",
+        "instrument": "Equity",
+        "allocation_pct": "4.74"
+      },
+      {
+        "name": "Larsen & Toubro Ltd.",
+        "sector": "Construction",
+        "instrument": "Equity",
+        "allocation_pct": "3.99"
+      },
+      {
+        "name": "State Bank of India",
+        "sector": "Financial",
+        "instrument": "Equity",
+        "allocation_pct": "3.86"
+      },
+      {
+        "name": "Axis Bank Ltd.",
+        "sector": "Financial",
+        "instrument": "Equity",
+        "allocation_pct": "3.39"
+      },
+      {
+        "name": "Tata Consultancy Services Ltd.",
+        "sector": "Technology",
+        "instrument": "Equity",
+        "allocation_pct": "2.75"
+      },
+      {
+        "name": "ITC Ltd.",
+        "sector": "Consumer Staples",
+        "instrument": "Equity",
+        "allocation_pct": "2.68"
+      },
+      {
+        "name": "Mahindra & Mahindra Ltd.",
+        "sector": "Automobile",
+        "instrument": "Equity",
+        "allocation_pct": "2.64"
+      },
+      {
+        "name": "Kotak Mahindra Bank Ltd.",
+        "sector": "Financial",
+        "instrument": "Equity",
+        "allocation_pct": "2.59"
+      },
+      {
+        "name": "Bajaj Finance Ltd.",
+        "sector": "Financial",
+        "instrument": "Equity",
+        "allocation_pct": "2.13"
+      },
+      {
+        "name": "Hindustan Unilever Ltd.",
+        "sector": "Consumer Staples",
+        "instrument": "Equity",
+        "allocation_pct": "1.82"
+      },
+      {
+        "name": "Eternal Ltd.",
+        "sector": "Services",
+        "instrument": "Equity",
+        "allocation_pct": "1.70"
+      },
+      {
+        "name": "Maruti Suzuki India Ltd.",
+        "sector": "Automobile",
+        "instrument": "Equity",
+        "allocation_pct": "1.65"
+      },
+      {
+        "name": "HCL Technologies Ltd.",
+        "sector": "Technology",
+        "instrument": "Equity",
+        "allocation_pct": "1.54"
+      },
+      {
+        "name": "Sun Pharmaceutical Industries Ltd.",
+        "sector": "Healthcare",
+        "instrument": "Equity",
+        "allocation_pct": "1.46"
+      },
+      {
+        "name": "NTPC Ltd.",
+        "sector": "Energy",
+        "instrument": "Equity",
+        "allocation_pct": "1.46"
+      },
+      {
+        "name": "Titan Company Ltd.",
+        "sector": "Consumer Discretionary",
+        "instrument": "Equity",
+        "allocation_pct": "1.42"
+      },
+      {
+        "name": "Bharat Electronics Ltd.",
+        "sector": "Capital Goods",
+        "instrument": "Equity",
+        "allocation_pct": "1.39"
+      },
+      {
+        "name": "Tata Steel Ltd.",
+        "sector": "Metals & Mining",
+        "instrument": "Equity",
+        "allocation_pct": "1.38"
+      },
+      {
+        "name": "Ultratech Cement Ltd.",
+        "sector": "Construction",
+        "instrument": "Equity",
+        "allocation_pct": "1.29"
+      },
+      {
+        "name": "Shriram Finance Ltd",
+        "sector": "Financial",
+        "instrument": "Equity",
+        "allocation_pct": "1.23"
+      },
+      {
+        "name": "Hindalco Industries Ltd.",
+        "sector": "Metals & Mining",
+        "instrument": "Equity",
+        "allocation_pct": "1.20"
+      },
+      {
+        "name": "Power Grid Corporation Of India Ltd.",
+        "sector": "Energy",
+        "instrument": "Equity",
+        "allocation_pct": "1.00"
+      },
+      {
+        "name": "JSW Steel Ltd.",
+        "sector": "Metals & Mining",
+        "instrument": "Equity",
+        "allocation_pct": "0.98"
+      },
+      {
+        "name": "Bajaj Finserv Ltd.",
+        "sector": "Financial",
+        "instrument": "Equity",
+        "allocation_pct": "0.96"
+      },
+      {
+        "name": "Tech Mahindra Ltd.",
+        "sector": "Technology",
+        "instrument": "Equity",
+        "allocation_pct": "0.95"
+      },
+      {
+        "name": "Asian Paints Ltd.",
+        "sector": "Chemicals",
+        "instrument": "Equity",
+        "allocation_pct": "0.95"
+      },
+      {
+        "name": "Grasim Industries Ltd.",
+        "sector": "Construction",
+        "instrument": "Equity",
+        "allocation_pct": "0.93"
+      },
+      {
+        "name": "Bajaj Auto Ltd.",
+        "sector": "Automobile",
+        "instrument": "Equity",
+        "allocation_pct": "0.91"
+      },
+      {
+        "name": "Adani Ports and Special Economic Zone Ltd.",
+        "sector": "Services",
+        "instrument": "Equity",
+        "allocation_pct": "0.90"
+      },
+      {
+        "name": "Oil And Natural Gas Corporation Ltd.",
+        "sector": "Energy",
+        "instrument": "Equity",
+        "allocation_pct": "0.90"
+      },
+      {
+        "name": "Interglobe Aviation Ltd.",
+        "sector": "Services",
+        "instrument": "Equity",
+        "allocation_pct": "0.90"
+      },
+      {
+        "name": "Coal India Ltd.",
+        "sector": "Energy",
+        "instrument": "Equity",
+        "allocation_pct": "0.86"
+      },
+      {
+        "name": "Eicher Motors Ltd.",
+        "sector": "Automobile",
+        "instrument": "Equity",
+        "allocation_pct": "0.84"
+      },
+      {
+        "name": "Nestle India Ltd.",
+        "sector": "Consumer Staples",
+        "instrument": "Equity",
+        "allocation_pct": "0.82"
+      },
+      {
+        "name": "SBI Life Insurance Company Ltd.",
+        "sector": "Insurance",
+        "instrument": "Equity",
+        "allocation_pct": "0.77"
+      },
+      {
+        "name": "Trent Ltd.",
+        "sector": "Services",
+        "instrument": "Equity",
+        "allocation_pct": "0.72"
+      },
+      {
+        "name": "JIO Financial Services Ltd.",
+        "sector": "Financial",
+        "instrument": "Equity",
+        "allocation_pct": "0.72"
+      },
+      {
+        "name": "HDFC Life Insurance Co Ltd.",
+        "sector": "Insurance",
+        "instrument": "Equity",
+        "allocation_pct": "0.68"
+      },
+      {
+        "name": "Cipla Ltd.",
+        "sector": "Healthcare",
+        "instrument": "Equity",
+        "allocation_pct": "0.64"
+      },
+      {
+        "name": "Dr. Reddy's Laboratories Ltd.",
+        "sector": "Healthcare",
+        "instrument": "Equity",
+        "allocation_pct": "0.64"
+      },
+      {
+        "name": "Tata Consumer Products Ltd.",
+        "sector": "Consumer Staples",
+        "instrument": "Equity",
+        "allocation_pct": "0.64"
+      },
+      {
+        "name": "Tata Motors Passenger Vehicles Ltd.",
+        "sector": "Automobile",
+        "instrument": "Equity",
+        "allocation_pct": "0.63"
+      },
+      {
+        "name": "Apollo Hospitals Enterprise Ltd.",
+        "sector": "Healthcare",
+        "instrument": "Equity",
+        "allocation_pct": "0.62"
+      },
+      {
+        "name": "Max Healthcare Institute Ltd.",
+        "sector": "Healthcare",
+        "instrument": "Equity",
+        "allocation_pct": "0.61"
+      },
+      {
+        "name": "Wipro Ltd.",
+        "sector": "Technology",
+        "instrument": "Equity",
+        "allocation_pct": "0.58"
+      },
+      {
+        "name": "Adani Enterprises Ltd.",
+        "sector": "Services",
+        "instrument": "Equity",
+        "allocation_pct": "0.45"
+      },
+      {
+        "name": "Kwality Wall's (India) Ltd.",
+        "sector": "Consumer Staples",
+        "instrument": "Equity",
+        "allocation_pct": "0.03"
+      }
+    ]
+  },
+  "fund_house_details": {
+    "name": "Groww Mutual Fund",
+    "date_of_incorporation": "10 Apr 2008",
+    "phone": "8050180222",
+    "email": "mfshyderabad@kfintech.com",
+    "website": "www.karvymfs.com",
+    "address": "Karvy House, No. 46, 8-2-609/K, Avenue 4, Street No.1 Banjara Hills,",
+    "registrar_transfer_agent": "KFin Tech"
+  },
+  "document_links": {
+    "sid_page": "https://growwmf.in/"
+  }
+}

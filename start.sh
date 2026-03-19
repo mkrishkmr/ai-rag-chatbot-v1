@@ -1,35 +1,56 @@
 #!/bin/bash
+set -e
 
-echo "🚀 Starting Groww Fact Engine..."
+echo "======================================"
+echo " Groww AI Fact Engine — Local Startup"
+echo "======================================"
 
-# 1. Start the FastAPI backend on port 8080 in the background
-echo "📦 Starting FastAPI backend (Port 8080)..."
+# Check required env vars before doing anything
+if [ -z "$GOOGLE_API_KEY" ] || [ -z "$GROQ_API_KEY" ]; then
+  echo "ERROR: GOOGLE_API_KEY and GROQ_API_KEY must be set in .env"
+  exit 1
+fi
+
 source venv/bin/activate
-PYTHONPATH=. python phase3_api/main.py &
+export PYTHONPATH=.
+
+# Phase 1: Ingest data
+echo ""
+echo "[1/4] Running ingestion pipeline..."
+python -m phase1_ingestion.run_ingestion
+echo "[1/4] Ingestion complete."
+
+# Phase 2: Embed into ChromaDB
+echo ""
+echo "[2/4] Embedding documents into ChromaDB..."
+python -m phase2_rag.ingest
+echo "[2/4] Embedding complete."
+
+# Phase 3: Start FastAPI backend in background
+echo ""
+echo "[3/4] Starting FastAPI backend on port 8080..."
+PYTHONPATH=. python -m phase3_api.main &
 BACKEND_PID=$!
-
-echo "Backend PID: $BACKEND_PID"
-
-# 2. Wait a few seconds for Backend to boot up
 sleep 3
 
-# 3. Start the Next.js frontend on port 3000
-echo "🖥️ Starting Next.js frontend (Port 3000)..."
-cd frontend
-npm run dev &
+# Phase 4: Start Next.js frontend in background
+echo ""
+echo "[4/4] Starting Next.js frontend on port 3000..."
+cd frontend && npm run dev &
 FRONTEND_PID=$!
 
-echo "Frontend PID: $FRONTEND_PID"
+echo ""
+echo "======================================"
+echo " All services running."
+echo " Backend:  http://localhost:8080"
+echo " Frontend: http://localhost:3000"
+echo " Press Ctrl+C to stop all services."
+echo "======================================"
 
-# Function to handle termination
 cleanup() {
-    echo "🛑 Stopping services..."
-    kill $BACKEND_PID
-    kill $FRONTEND_PID
-    exit
+    echo "Stopping services..."
+    kill $BACKEND_PID $FRONTEND_PID 2>/dev/null
+    exit 0
 }
-
 trap cleanup SIGINT SIGTERM
-
-# Wait indefinitely so the script doesn't exit immediately
 wait

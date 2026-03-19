@@ -2,38 +2,13 @@ import os
 import fitz  # PyMuPDF
 import re
 
-# Temporary local PDF testing URLs/Paths
-PDF_SOURCES = {
-    "Groww Nifty 50 Index": {"sid": "https://groww.in/documents/nifty_50_index/sid.pdf"},
-    "Groww Value Fund": {"sid": "https://groww.in/documents/value_fund/sid.pdf"},
-    "Groww Aggressive Hybrid": {"sid": "https://groww.in/documents/hybrid/sid.pdf"},
-    "Groww ELSS Tax Saver": {"sid": "https://groww.in/documents/elss/sid.pdf"}
-}
+from phase1_ingestion.download_sid_kim import get_all_pdf_paths
 
-def download_pdf(url: str, save_path: str):
-    import requests
-    try:
-        if not os.path.exists(save_path):
-            print(f"📥 Downloading PDF from {url}...")
-            r = requests.get(url, stream=True)
-            if r.status_code == 200:
-                with open(save_path, 'wb') as f:
-                    for chunk in r.iter_content(chunk_size=1024):
-                        f.write(chunk)
-                return True
-            else:
-                print(f"⚠️ Failed to download, status: {r.status_code}")
-                return False
-        return True
-    except Exception as e:
-        print(f"❌ Download error: {e}")
-        return False
-
-def extract_pdf_rules(pdf_path: str, fund_name: str) -> dict:
+def parse_pdf(path: str, fund_name: str, fund_slug: str, doc_type: str) -> dict:
     """Uses PyMuPDF to extract text from a PDF, looking for lock-in and exit load rules."""
-    print(f"📄 Parsing PDF for {fund_name}")
+    print(f"📄 Parsing {doc_type} for {fund_name}")
     try:
-        doc = fitz.open(pdf_path)
+        doc = fitz.open(path)
         full_text = ""
         for page in doc:
             full_text += page.get_text()
@@ -44,17 +19,35 @@ def extract_pdf_rules(pdf_path: str, fund_name: str) -> dict:
 
         return {
             "fund_name": fund_name,
-            "document_type": "PDF SID/KIM",
+            "fund_slug": fund_slug,
+            "document_type": doc_type,
+            "source": "PDF",
+            "url_source": "growwmf.in_official_cdn",
             "extracted_rules": {
                 "lock_in": lock_in.group(1).strip() if lock_in else "Not found/None",
                 "exit_load": exit_load.group(1).strip() if exit_load else "Not found/None"
             },
-            "raw_text_length": len(full_text)
+            "raw_text_length": len(full_text),
+            "full_extracted_text": full_text
         }
     except Exception as e:
-        print(f"❌ Failed to parse PDF {pdf_path}: {e}")
-        return {"error": str(e)}
+        print(f"❌ Failed to parse PDF {path}: {e}")
+        return {"error": str(e), "fund_slug": fund_slug, "doc_type": doc_type}
+
+def parse_all_pdfs() -> list[dict]:
+    pdf_list = get_all_pdf_paths()
+    results = []
+    for entry in pdf_list:
+        parsed_data = parse_pdf(
+            path=entry["path"],
+            fund_name=entry["fund_name"],
+            fund_slug=entry["fund_slug"],
+            doc_type=entry["doc_type"]
+        )
+        results.append(parsed_data)
+    return results
 
 if __name__ == "__main__":
-    # Test block
-    print("Testing PyMuPDF parsing logic...")
+    print("Testing PyMuPDF parsing logic on live downloaded PDFs...")
+    results = parse_all_pdfs()
+    print(f"Successfully parsed {len(results)} PDFs.")

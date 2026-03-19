@@ -6,6 +6,9 @@ import { Send, TrendingUp, ShieldCheck, Activity, BrainCircuit } from "lucide-re
 type Message = {
   role: "user" | "assistant";
   content: string;
+  sources?: any[];
+  gate_blocked?: string | null;
+  response_type?: string;
 };
 
 export default function Home() {
@@ -17,18 +20,72 @@ export default function Home() {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState<Message | null>(null);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll on new message
   useEffect(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, streamingMessage]);
+
+  const cleanAnswer = (text: string) =>
+    text
+      .replace(/\[Source:[^\]]*\]/g, '')
+      .replace(/\[View Source\]/g, '')
+      .trim();
+
+  const renderAnswer = (text: string) => {
+    const cleaned = cleanAnswer(text);
+    const lines = cleaned
+      .split('\n')
+      .map(l => l.trim())
+      .filter(Boolean);
+      
+    if (lines.length === 0) return null;
+    
+    return (
+      <ul className="answer-list">
+        {lines.map((line, i) => (
+          <li key={i} className="answer-item">
+            {line.replace(/^[\u2022\-\*]\s*/, '')}
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  const getSourceLabel = (source: any) => {
+    if (source.fund_name) {
+      return source.fund_name
+        .replace('Direct Growth', '')
+        .replace('Groww', '')
+        .trim();
+    }
+    // fallback: parse from URL
+    const url = source.source_url || '';
+    const slug = url.split('/').pop() || url;
+    return slug
+      .replace('groww-', '')
+      .replace(/-/g, ' ')
+      .replace('direct growth', '')
+      .trim()
+      .split(' ')
+      .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  };
+
+  const getSourceTypeLabel = (source: any) => {
+    if (source.doc_type === 'SID') return 'Scheme Info Doc';
+    if (source.doc_type === 'KIM') return 'Key Info Memo';
+    return 'Live Data';
+  };
 
   const handleSend = async (text: string) => {
     if (!text.trim()) return;
 
     const userMsg: Message = { role: "user", content: text };
-    setMessages((prev) => [...prev, userMsg]);
+    const currentMessages = [...messages, userMsg];
+    setMessages(currentMessages);
     setInput("");
     setLoading(true);
 
@@ -39,7 +96,12 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: text,
-          history: messages.slice(-5), // Keep last 5 messages for context
+          history: messages
+            .filter(m => m.role !== "assistant" || (m.content && !m.content.startsWith("❌ Error")))
+            .map(m => ({ 
+              role: m.role === "assistant" ? "ai" : m.role, 
+              content: m.content 
+            })), 
         }),
       });
 
@@ -47,28 +109,57 @@ export default function Home() {
         throw new Error(await response.text());
       }
 
-      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      // Placeholder removed to prevent double bubbles. streamingMessage handles the active bubble.
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let done = false;
+      let accumulatedAnswer = "";
+      let accumulatedSources: any[] = [];
+      let accumulatedResponseType: string | undefined;
+      let accumulatedGateBlocked: string | null = null;
 
       while (reader && !done) {
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
-        const chunkValue = decoder.decode(value);
-        if (chunkValue) {
-          setMessages((prev) => {
-            const newMsgs = [...prev];
-            const lastMsg = newMsgs[newMsgs.length - 1];
-            newMsgs[newMsgs.length - 1] = {
-              ...lastMsg,
-              content: lastMsg.content + chunkValue
-            };
-            return newMsgs;
-          });
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n').filter(line => line.trim());
+        
+        for (const line of lines) {
+          const cleanLine = line.startsWith('data: ') ? line.slice(6) : line;
+          if (!cleanLine || cleanLine === '[DONE]') continue;
+          
+          try {
+            const data = JSON.parse(cleanLine);
+            if (data.answer) accumulatedAnswer += data.answer;
+            if (data.sources) accumulatedSources = data.sources;
+            if (data.response_type) accumulatedResponseType = data.response_type;
+            if (data.gate_blocked) accumulatedGateBlocked = data.gate_blocked;
+
+            setStreamingMessage({
+              role: "assistant",
+              content: accumulatedAnswer,
+              sources: accumulatedSources,
+              gate_blocked: accumulatedGateBlocked,
+              ...(accumulatedResponseType ? { response_type: accumulatedResponseType } : {})
+            } as any);
+          } catch (e) {
+            continue;
+          }
         }
       }
+
+      // After stream completes, push the final message to history
+      if (accumulatedAnswer || accumulatedGateBlocked) {
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: accumulatedAnswer,
+          sources: accumulatedSources,
+          gate_blocked: accumulatedGateBlocked,
+          ...(accumulatedResponseType ? { response_type: accumulatedResponseType } : {})
+        } as any]);
+      }
+      setStreamingMessage(null);
     } catch (err: any) {
       setMessages((prev) => [
         ...prev,
@@ -82,156 +173,205 @@ export default function Home() {
   const QUICK_PROMPTS = [
     "What is the Expense Ratio of the Nifty 50 Index Fund?",
     "Show me the Exit Load for ELSS Tax Saver.",
-    "Compare NAV of Value Fund vs Aggressive Hybrid.",
+    "Show me the fund manager for Groww Value Fund.",
   ];
 
-  const formatContent = (text: string) => {
-    // Split text by URLs
-    const parts = text.split(/(https?:\/\/[^\s]+)/g);
-    return parts.map((part, i) => {
-      // If the part is a URL, render it nicely
-      if (part.match(/^https?:\/\//)) {
-        // Strip trailing punctuation from URL if caught
-        const cleanUrl = part.replace(/[.)\]}]+$/, '');
-        return (
-          <a
-            key={i}
-            href={cleanUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-emerald-400 hover:text-emerald-300 font-medium underline underline-offset-4 transition-colors"
-          >
-            [View Source]
-          </a>
-        );
-      }
-      return <span key={i}>{part}</span>;
-    });
-  };
-
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#0B0E14] text-[#F8F9FA] flex flex-col items-center">
-      {/* Background Decorative Blobs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-sky-600/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-blue-900/40 rounded-full blur-[120px] pointer-events-none" />
-
-      {/* Header */}
-      <header className="w-full max-w-4xl pt-8 pb-4 px-6 flex items-center justify-between z-10">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-sky-500/10 rounded-xl border border-sky-400/20 glass-glow">
-            <TrendingUp className="text-sky-400 w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-wide">Groww AI Fact Engine</h1>
-            <p className="text-xs text-slate-400">Strictly Factual. No Advisory.</p>
-          </div>
-        </div>
-
-        {/* Trust Indicator */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs font-medium text-emerald-400 tracking-wide uppercase">Live Connection</span>
-        </div>
+    <div className="chat-container">
+      <header className="chat-header">
+        <div className="header-badge">BETA</div>
+        <h1 className="header-title">Groww Fact Engine</h1>
+        <p className="header-subtitle">
+          Verified data from official AMC documents & live sources
+        </p>
       </header>
 
-      {/* Chat Container */}
-      <main className="flex-1 w-full max-w-4xl px-4 md:px-6 py-4 flex flex-col z-10 h-0">
-        <div className="glass-panel flex-1 rounded-3xl p-4 md:p-6 overflow-y-auto flex flex-col gap-6 relative">
+      <main className="flex flex-col gap-6">
+        {messages.map((msg, i) => (
+          <div key={i} className={msg.role === "user" ? "message-user" : "flex flex-col"}>
+            {msg.role === "user" ? (
+              <div className="message-user-bubble">
+                {msg.content}
+              </div>
+            ) : (
+              <div className="message-ai">
+                <div className="message-ai-label">Growth AI</div>
+                
+                {msg.gate_blocked ? (
+                   <div className={`gate-message ${msg.gate_blocked === 'advice_query' ? 'advice' : msg.gate_blocked}`}>
+                     {msg.gate_blocked === 'out_of_scope' && "I only have information about Groww Nifty 50 Index Fund, Groww Value Fund, Groww Aggressive Hybrid Fund, and Groww ELSS Tax Saver Fund."}
+                     {msg.gate_blocked === 'pii' && "Your query was blocked because it contains sensitive personal information."}
+                     {msg.gate_blocked === 'zero_retrieval' && "I don't have that information in my knowledge base."}
+                     {msg.gate_blocked === 'empty_query' && "Please enter a valid question."}
+                     {msg.gate_blocked === 'advice_query' && (
+                       renderAnswer(msg.content)
+                     )}
+                   </div>
+                ) : (
+                  <>
+                    <div className="mb-4">
+                      {renderAnswer(msg.content)}
+                    </div>
 
-          {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-in slide-in-from-bottom-2 duration-300`}>
-              <div
-                className={`max-w-[85%] md:max-w-[75%] rounded-2xl p-4 ${msg.role === "user"
-                  ? "bg-sky-500/20 border border-sky-400/30 text-white rounded-br-sm"
-                  : "bg-white/5 border border-white/10 text-slate-200 rounded-bl-sm"
-                  }`}
-              >
-                {msg.role === "assistant" && (
-                  <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/5">
-                    <BrainCircuit className="w-4 h-4 text-sky-400" />
-                    <span className="text-xs font-semibold text-sky-400 uppercase tracking-widest">Growth AI</span>
-                  </div>
-                )}
+                    {msg.sources && msg.sources.length > 0 && msg.response_type !== 'refusal' && (
+                      <div className="sources-panel">
+                        {(() => {
+                          const validSources = msg.sources
+                            .filter(s => s?.source_url && s.source_url.startsWith('https://'))
+                            .filter((s, i, arr) =>
+                              arr.findIndex(x =>
+                                  x.fund_name === s.fund_name &&
+                                  x.source_url === s.source_url
+                              ) === i
+                            )
+                            .slice(0, 3);
 
-                <div className="leading-relaxed whitespace-pre-wrap text-[15px]">
-                  {formatContent(msg.content)}
-                </div>
+                          if (validSources.length === 0) return null;
 
-                {/* Source/Citation Highlighting */}
-                {msg.role === "assistant" && msg.content.includes("Source:") && (
-                  <div className="mt-3 pt-3 border-t border-white/10 flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                    <span className="text-xs text-emerald-400">Fact-checked against verified SID/Web data</span>
-                  </div>
+                          return (
+                            <>
+                              <div className="sources-header">
+                                <span className="sources-icon">⟨/⟩</span>
+                                <span className="sources-label">Verified Sources</span>
+                              </div>
+                              <div className="sources-list">
+                                {validSources.map((s: any, idx) => (
+                                  <a
+                                    key={idx}
+                                    href={s.source_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="source-link"
+                                  >
+                                    <span className="source-index">{idx + 1}</span>
+                                    <span className="source-type">
+                                      {getSourceTypeLabel(s)}
+                                    </span>
+                                    <span className="source-fund">
+                                      {getSourceLabel(s)}
+                                    </span>
+                                    <span className="source-arrow">↗</span>
+                                  </a>
+                                ))}
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
+            )}
+          </div>
+        ))}
+
+        {streamingMessage && (
+          <div className="flex flex-col">
+            <div className="message-ai">
+              <div className="message-ai-label">Growth AI</div>
+              {streamingMessage.gate_blocked ? (
+                 <div className={`gate-message ${streamingMessage.gate_blocked === 'advice_query' ? 'advice' : streamingMessage.gate_blocked}`}>
+                   {streamingMessage.gate_blocked === 'out_of_scope' && "I only have information about Groww Nifty 50 Index Fund, Groww Value Fund, Groww Aggressive Hybrid Fund, and Groww ELSS Tax Saver Fund."}
+                   {streamingMessage.gate_blocked === 'pii' && "Your query was blocked because it contains sensitive personal information."}
+                   {streamingMessage.gate_blocked === 'zero_retrieval' && "I don't have that information in my knowledge base."}
+                   {streamingMessage.gate_blocked === 'empty_query' && "Please enter a valid question."}
+                   {streamingMessage.gate_blocked === 'advice_query' && (
+                     renderAnswer(streamingMessage.content)
+                   )}
+                 </div>
+              ) : (
+                <>
+                  <div className="mb-4">
+                    {renderAnswer(streamingMessage.content)}
+                  </div>
+                  {streamingMessage.sources && streamingMessage.sources.length > 0 && streamingMessage.response_type !== 'refusal' && (
+                    <div className="sources-panel">
+                       <div className="sources-header">
+                        <span className="sources-icon">⟨/⟩</span>
+                        <span className="sources-label">Verified Sources</span>
+                      </div>
+                      <div className="sources-list animate-pulse opacity-50">
+                        {streamingMessage.sources.filter((s: any, i: number, arr: any[]) =>
+                            arr.findIndex((x: any) =>
+                                x.fund_name === s.fund_name &&
+                                x.source_url === s.source_url
+                            ) === i
+                          )
+.slice(0,3).map((s: any, idx: number) => (
+                           <div key={idx} className="source-link cursor-default">
+                            <span className="source-index">{idx + 1}</span>
+                            <span className="source-fund">{getSourceLabel(s)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
-          ))}
+          </div>
+        )}
 
-          {loading && (
-            <div className="flex justify-start">
-              <div className="glass-panel max-w-[75%] rounded-2xl rounded-bl-sm p-4 border border-white/5 flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-sky-400 animate-pulse" />
-                  <span className="text-xs font-semibold text-slate-300 tracking-wider">RETRIEVING CONTEXT</span>
-                </div>
-                <div className="flex gap-1.5 mt-1">
-                  <div className="w-2 h-2 rounded-full bg-slate-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 rounded-full bg-slate-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 rounded-full bg-slate-500 animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
-              </div>
+        {loading && !streamingMessage && (
+          <div className="message-ai">
+            <div className="message-ai-label">Retrieving Context</div>
+            <div className="loading-dots">
+              <div className="loading-dot" />
+              <div className="loading-dot" />
+              <div className="loading-dot" />
             </div>
-          )}
+          </div>
+        )}
 
-          <div ref={endOfMessagesRef} />
-        </div>
+        <div ref={endOfMessagesRef} />
+      </main>
 
-        {/* Input Area */}
-        <div className="mt-6 flex flex-col gap-3">
+      <div className="input-bar">
+        <div className="max-w-[760px] mx-auto mb-4">
           {messages.length === 1 && (
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="text-xs text-slate-400 font-medium uppercase tracking-wider mr-2">Quick asks:</span>
+            <div className="flex flex-wrap gap-2 mb-4 justify-center">
               {QUICK_PROMPTS.map((prompt, i) => (
                 <button
                   key={i}
                   onClick={() => handleSend(prompt)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-300 hover:bg-sky-500/20 hover:text-sky-300 hover:border-sky-400/30 transition-all duration-300"
+                  className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:bg-gold/10 hover:text-gold hover:border-gold/30 transition-all duration-300"
                 >
                   {prompt}
                 </button>
               ))}
             </div>
           )}
-
-          <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-sky-500/20 to-blue-500/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
-            <div className="relative glass-panel rounded-2xl flex items-end p-2 border border-white/10 group-focus-within:border-sky-500/50 transition duration-300 bg-[#12161E]/80">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend(input);
-                  }
-                }}
-                disabled={loading}
-                placeholder="Ask about NAV, Expense Ratios, or Exit Loads..."
-                className="w-full bg-transparent resize-none outline-none py-3 px-4 text-white placeholder-slate-500 max-h-32 min-h-[56px]"
-                rows={1}
-              />
-              <button
-                onClick={() => handleSend(input)}
-                disabled={!input.trim() || loading}
-                className="p-3 bg-sky-500 hover:bg-sky-400 disabled:bg-white/5 disabled:text-slate-500 text-white rounded-xl shadow-[0_0_15px_rgba(56,189,248,0.3)] transition-all duration-300 m-1 flex-shrink-0"
-              >
-                <Send className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
         </div>
-      </main>
+
+        <div className="input-wrapper">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend(input);
+              }
+            }}
+            disabled={loading}
+            placeholder="Ask about Groww Mutual Funds..."
+            className="input-field resize-none h-6 pt-0"
+            rows={1}
+          />
+          <button
+            onClick={() => handleSend(input)}
+            disabled={!input.trim() || loading}
+            className="send-button"
+          >
+            <Send size={18} />
+          </button>
+        </div>
+        
+        <p className="text-[10px] text-center mt-3 text-slate-500 uppercase tracking-widest opacity-50">
+          Strictly Factual. No Advisory. Powered by Groww RAG Engine.
+        </p>
+      </div>
     </div>
   );
 }

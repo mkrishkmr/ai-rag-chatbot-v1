@@ -51,9 +51,36 @@ This application is built for educational and technical demonstration purposes o
 
 ## 🚀 Execution & Deployment
 
-To run this locally, use the provided bash script which launches both the Python and Node.js environments:
-```bash
-./start.sh
-```
+### LOCAL DEVELOPMENT — STEP BY STEP
+**Prerequisites:**
+* Python 3.10+ with venv activated
+* Node.js 18+ for the frontend
+* `.env` file with `GOOGLE_API_KEY` and `GROQ_API_KEY` set
 
-For Cloud Deployment, refer to the step-by-step CI/CD guides in `DEPLOYMENT.md` for seamless routing to Render (Backend) and Vercel (Frontend).
+**Step 1 — Download PDFs and scrape web data:**
+`python -m phase1_ingestion.run_ingestion`
+_Expected output: `data/pdfs/` populated, `data/unified_knowledge_base.json` created_
+
+**Step 2 — Embed into ChromaDB:**
+`python -m phase2_rag.ingest`
+_Expected output: `chroma_db/` populated, ~60 documents ingested_
+_Note: takes ~6 minutes on free Gemini tier due to rate limiting_
+
+**Step 3 — Verify everything with tests:**
+`python -m pytest tests/ -v`
+_Expected output: all tests pass except live LLM test if GROQ_API_KEY absent_
+
+**Step 4 — Start everything:**
+`./start.sh`
+* Backend:  http://localhost:8080/health → `{"status":"ok"}`
+* Frontend: http://localhost:3000
+
+**Manual test queries to verify end to end:**
+* "What is the exit load for Groww Value Fund?"
+* "Who manages the Groww ELSS Tax Saver Fund?"
+* "What is the minimum SIP for Groww Nifty 50 Index Fund?"
+* "What is the NAV of SBI Bluechip Fund?"  ← must return scope block
+* "My PAN is ABCDE1234F"                   ← must return 400
+
+---
+*For Cloud Deployment, refer to the step-by-step CI/CD guides in `DEPLOYMENT.md` for seamless routing to Render (Backend) and Vercel (Frontend).*

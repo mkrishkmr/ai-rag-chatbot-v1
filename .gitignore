@@ -19,3 +19,9 @@ chroma_db/
 # Playwright
 *.pdf
 .pytest_cache/
+
+# Logs
+backend.log
+*.log
+
+.vscode/

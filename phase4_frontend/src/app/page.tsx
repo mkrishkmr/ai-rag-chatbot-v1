@@ -28,7 +28,8 @@ export default function Home() {
     setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
     try {
-      const res = await fetch("http://localhost:8080/api/chat", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const res = await fetch(`${apiUrl}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -118,8 +119,8 @@ export default function Home() {
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[85%] rounded-2xl px-5 py-4 ${msg.role === "user"
-                  ? "bg-blue-600/80 backdrop-blur-sm text-white rounded-br-none shadow-lg shadow-blue-900/50"
-                  : "glass-card text-slate-200 rounded-bl-none"
+                ? "bg-blue-600/80 backdrop-blur-sm text-white rounded-br-none shadow-lg shadow-blue-900/50"
+                : "glass-card text-slate-200 rounded-bl-none"
                 }`}>
                 {msg.role === "assistant" && i > 0 && msg.content.includes("Source:") && (
                   <div className="mb-3 p-3 bg-black/30 rounded-lg flex items-start space-x-3 border border-white/5">
