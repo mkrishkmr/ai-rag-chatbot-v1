@@ -90,6 +90,7 @@ export default function Home() {
     setLoading(true);
 
     try {
+      // Use API URL from env or fallback to localhost
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
       const response = await fetch(`${apiUrl}/api/chat`, {
         method: "POST",
