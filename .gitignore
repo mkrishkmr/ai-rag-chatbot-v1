@@ -14,13 +14,16 @@ build/
 .DS_Store
 
 # ChromaDB
+chroma_db/
+*.sqlite3
 
 # Playwright
 *.pdf
 .pytest_cache/
 
-# Logs
+# Logs & Traces
 backend.log
 *.log
+*.jsonl
 
 .vscode/

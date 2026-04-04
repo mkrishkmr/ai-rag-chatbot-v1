@@ -43,7 +43,7 @@ Vercel is natively tailored for Next.js applications and will recognize the `fro
 1. Create an account on [Vercel.com](https://vercel.com).
 2. On the dashboard, click **Add New** -> **Project**.
 3. Import your GitHub repository.
-4. In the configuration settings, **change the Root Directory** from `/` to `frontend`.
+4. In the configuration settings, **change the Root Directory** from `/` to `phase4_frontend`.
 5. Open the **Environment Variables** tab and add:
    * **Name**: `NEXT_PUBLIC_API_URL`
    * **Value**: *[The URL of your Render backend from step 2]* (e.g., `https://groww-fact-engine-api.onrender.com`)

@@ -1,4 +1,5 @@
 import time
+import hashlib
 import logging
 from math import ceil
 import os
@@ -20,14 +21,10 @@ if not os.getenv("GOOGLE_API_KEY") or not os.getenv("GROQ_API_KEY"):
 from phase2_rag.chroma_db import get_vector_store
 
 # -------------------------------------------------------
-# TUNING CONSTANTS
-# Free tier:  BATCH_SIZE=5,  BATCH_DELAY=15  (~mins for 60 docs)
-# Paid tier:  BATCH_SIZE=20, BATCH_DELAY=2
-# DO NOT set BATCH_DELAY to 0 or remove it — this causes 429 loops
-# DO NOT add a hard cap on document count — embed all documents
+# TUNING CONSTANTS (Optimized for Paid Gemini Tier)
 # -------------------------------------------------------
-BATCH_SIZE = 5
-BATCH_DELAY = 15
+BATCH_SIZE = 100
+BATCH_DELAY = 1
 
 def ingest(documents: list, vectorstore):
     """
@@ -59,11 +56,13 @@ def ingest(documents: list, vectorstore):
     # --- Assign deterministic IDs, filter to pending only ---
     pending = []
     for doc in documents:
+        # Deterministic MD5 hash of page content for ID stability
+        content_hash = hashlib.md5(doc.page_content.encode('utf-8')).hexdigest()[:12]
         doc_id = (
             f"{doc.metadata.get('fund_slug', 'x')}_"
             f"{doc.metadata.get('chunk_type', 'chunk')}_"
             f"{doc.metadata.get('source', 'web')}_"
-            f"{abs(hash(doc.page_content)) % 999999}"
+            f"{content_hash}"
         )
         if doc_id not in existing_ids:
             doc.metadata["doc_id"] = doc_id
@@ -241,7 +240,8 @@ def ingest_fact_sheet(json_path: str = "phase1_ingestion/data/unified_knowledge_
                         "fund_name": pdf['fund_name'],
                         "page_number": i + 1,
                         "source_url": source_url_sidecar,
-                        "chunk_type": f"{pdf_doc_type}_chunk"
+                        "chunk_type": f"{pdf_doc_type}_chunk",
+                        "doc_type": pdf_doc_type # Metadata expected by TestChromaDB::test_sid_and_kim_doc_types_present
                     }
                 )
                 docs.append(pdf_doc)

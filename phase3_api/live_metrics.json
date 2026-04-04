@@ -1,0 +1,30 @@
+{
+  "nifty50_index": {
+    "fund_name": "Groww Nifty 50 Index Fund Direct Growth",
+    "nav": "9.06",
+    "fund_size_cr": "20.22",
+    "expense_ratio_pct": "0.30",
+    "nav_date": "04 Apr 2026"
+  },
+  "value_fund": {
+    "fund_name": "Groww Value Fund Direct Growth",
+    "nav": "29.31",
+    "fund_size_cr": "66.14",
+    "expense_ratio_pct": "1.05",
+    "nav_date": "04 Apr 2026"
+  },
+  "aggressive_hybrid": {
+    "fund_name": "Groww Aggressive Hybrid Fund Direct Growth",
+    "nav": "21.64",
+    "fund_size_cr": "50.28",
+    "expense_ratio_pct": "1.51",
+    "nav_date": "04 Apr 2026"
+  },
+  "elss_tax_saver": {
+    "fund_name": "Groww ELSS Tax Saver Fund Direct Growth",
+    "nav": "19.96",
+    "fund_size_cr": "51.36",
+    "expense_ratio_pct": "0.94",
+    "nav_date": "04 Apr 2026"
+  }
+}

@@ -1,6 +1,6 @@
 # Groww AI Fact Engine 💰🤖
 
-A complete, end-to-end Retrieval-Augmented Generation (RAG) chatbot designed exclusively to provide strict, verified facts on Groww Mutual Funds. 
+A complete, end-to-end Retrieval-Augmented Generation (RAG) chatbot designed exclusively to provide strict, verified facts on Groww Mutual Funds through **Guided Information Discovery**. 
 
 Built with **FastAPI**, **Next.js**, **Playwright**, and **ChromaDB**, and powered by **Groq** (`llama-3.1-8b-instant`) and **Google Gemini** embeddings.
 
@@ -12,8 +12,8 @@ The application is structured into four distinct execution phases:
 
 1. **Phase 1 (Ingestion):** Playwright dynamically scrapes real-time mutual fund metrics (NAV, AUM, Expense Ratio) from Groww, while PyMuPDF parses the raw SID/KIM PDFs for hard rules (Exit Loads, Lock-ins).
 2. **Phase 2 (RAG & Knowledge Base):** The extracted data is unified, chunked, and embedded into local ChromaDB vectors using Gemini's `models/gemini-embedding-001`.
-3. **Phase 3 (Facts-Only API):** A FastAPI server exposes `/api/chat` with strict regex-based PII Guardrails (blocking PAN/Aadhaar) and strict LLM system prompts against giving financial advice.
-4. **Phase 4 (Glassmorphism Next.js UI):** A polished React app utilizing TailwindCSS for frosted-glass aesthetics, streaming Server-Sent Events from the backend.
+3. **Phase 3 (Guided Facts API):** A FastAPI server exposes `/api/chat` with strict PII Guardrails. It uses a **single-pass LLM orchestration** strategy to generate factual answers, rich source summaries, and contextual follow-up questions in one stream.
+4. **Phase 4 (Guided Discovery UI):** A polished React app utilizing TailwindCSS for frosted-glass aesthetics. It dynamically renders LLM-generated follow-up chips and citation cards with plain-English summaries.
 
 *(See `ARCHITECTURE.md` for the full technical data flow).*
 

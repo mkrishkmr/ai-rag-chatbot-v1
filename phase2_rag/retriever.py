@@ -2,7 +2,7 @@ from typing import List
 from langchain_core.documents import Document
 from phase2_rag.chroma_db import get_vector_store
 
-def retrieve_hybrid_context(query: str, k: int = 12) -> List[Document]:
+def retrieve_hybrid_context(query: str, k: int = 12, fund_slug: str = None) -> List[Document]:
     """
     Retrieves context from ChromaDB using a hybrid logic.
     Web documents are prioritized for volatile metrics (NAV, Expense Ratio).
@@ -13,15 +13,18 @@ def retrieve_hybrid_context(query: str, k: int = 12) -> List[Document]:
     # Simple query routing heuristic
     query_lower = query.lower()
     
+    # Base filter if fund_slug is provided
+    base_filter = {"fund_slug": fund_slug} if fund_slug else {}
+    
     # Determine the priority document type based on keywords
     if any(kw in query_lower for kw in ["nav", "expense ratio", "fee", "return", "aum"]):
         # Prioritize Web documents
-        print("🔍 Routing Query: Prioritizing 'Web' documents for metric-related query.")
+        print(f"🔍 Routing Query: Prioritizing 'Web' documents for metric-related query. Fund Filter: {fund_slug}")
         results = []
         # Support both 'Web' and 'web' in metadata, and handle legacy 'doc_type' key
         for key in ["document_type", "doc_type"]:
             for dt in ["Web", "web", "WebMetrics"]:
-                filter_dict = {key: dt}
+                filter_dict = {**base_filter, key: dt}
                 try:
                     batch = vector_store.similarity_search(query, k=k, filter=filter_dict)
                     results.extend(batch)
@@ -31,31 +34,32 @@ def retrieve_hybrid_context(query: str, k: int = 12) -> List[Document]:
             if len(results) >= k: break
         
         if len(results) < k:
-            remaining = vector_store.similarity_search(query, k=k - len(results))
+            remaining = vector_store.similarity_search(query, k=k - len(results), filter=base_filter)
             results.extend(remaining)
             
     elif any(kw in query_lower for kw in ["lock-in", "exit load", "rule", "constraint", "tax"]):
         # Prioritize PDF documents
-        print("🔍 Routing Query: Prioritizing 'PDF' documents for constraint-related query.")
+        print(f"🔍 Routing Query: Prioritizing 'PDF' documents for constraint-related query. Fund Filter: {fund_slug}")
         # We can implement a pre-filter using Chroma metadata filtering
-        filter_dict = {"document_type": "PDF"}
+        filter_dict = {**base_filter, "document_type": "PDF"}
         results = vector_store.similarity_search(query, k=k, filter=filter_dict)
         
         # If not enough results, fetch remaining from anything
         if len(results) < k:
-            remaining = vector_store.similarity_search(query, k=k - len(results))
+            remaining = vector_store.similarity_search(query, k=k - len(results), filter=base_filter)
             results.extend(remaining)
             
     else:
         # Standard unstructured retrieval
-        print("🔍 Routing Query: Standard semantic retrieval.")
-        results = vector_store.similarity_search(query, k=k)
+        print(f"🔍 Routing Query: Standard semantic retrieval. Fund Filter: {fund_slug}")
+        results = vector_store.similarity_search(query, k=k, filter=base_filter)
         
     # Deduplicate based on content
     seen_content = set()
     unique_results = []
     for doc in results:
-        if doc.page_content not in seen_content:
+        # Pydantic 2.x Guard: Ensure page_content is a non-empty string
+        if doc and isinstance(doc.page_content, str) and doc.page_content not in seen_content:
             seen_content.add(doc.page_content)
             unique_results.append(doc)
             
