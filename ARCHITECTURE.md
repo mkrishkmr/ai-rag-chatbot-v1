@@ -1,48 +1,75 @@
-# Architecture Overview
+# 🏗️ Architecture Overview
 
-This document outlines the technical flow of the Groww AI Fact Engine. 
+This document outlines the high-fidelity technical architecture of the **Groww AI Fact Engine**, a RAG system optimized for financial data accuracy, regulatory compliance, and real-time data freshness.
 
-## High-Level Diagram
+## 🗺️ High-Level Technical Flow
 
 ```mermaid
 graph TD
-    A[Playwright Scraper] -->|Extracts NAV, Expense Ratios| D(Unified JSON Document)
-    B[PyMuPDF Parser] -->|Extracts SID PDF Constraints| D
-    
-    D --> E[LangChain Document Splitter]
-    E --> F[ChromaDB Vector Store]
-    F -->|Google Gemini Vector Embeddings| F
-    
-    G[Next.js Glassmorphism UI] -->|Sends Question| H[FastAPI Endpoint]
-    
-    H --> I{PII Guardrail Check}
-    I -->|Valid| J[Vector Retrieval]
-    I -->|Contains PAN/Aadhaar| K[HTTP 400 Block]
-    
-    J --> L[Groq Llama-3.1 API]
-    L -->|Streams Answer| G
+    subgraph "Phase 1: Knowledge Ingestion"
+        A[Playwright Scraper] -->|Live Metrics| D(Unified JSON Document)
+        B[PyMuPDF Parser] -->|SID/KIM Rules| D
+    end
+
+    subgraph "Phase 2: Vector Storage"
+        D --> E[Recursive Character Splitter]
+        E --> F[ChromaDB Vector Store]
+        F -->|Gemini-001 Embeddings| F
+    end
+
+    subgraph "Phase 3: Intelligent Orchestration"
+        G[User Query] --> H[FastAPI Endpoint]
+        H --> I{Guardrails}
+        I -->|PII/Advice Detect| K[Block/Refuse]
+        I -->|Valid| L[Fund Classifier]
+        L -->|Detect fund_slug| M[Metadata Filtered Retrieval]
+        
+        N[(live_metrics.json)] -->|Inject Ground Truth| O[LLM Prompt Builder]
+        M -->|Context Chunks| O
+        
+        O --> P[Gemini-3-Flash LLM]
+        P -->|Stream SSE| Q[UI]
+        P -->|Log Trace| R[(traces.jsonl)]
+    end
+
+    subgraph "Phase 4: Premium Discovery UI"
+        Q -->|Dynamic Theme| S[Glassmorphism Interface]
+        S -->|Pulse Chips| T[Guided Follow-ups]
+        S -->|Context Sidebar| U[Source Highlighting]
+    end
 ```
 
-## Component Breakdown
+---
+
+## 🔧 Component Breakdown
 
 ### 1. The Ingestion Engine (`phase1_ingestion`)
-Because Groww is a modern React/Next.js Single Page Application, standard `requests` libraries cannot see the DOM. We use `Playwright` acting as a headless browser to mount the DOM and extract the metric nodes. We use `PyMuPDF` to parse the highly-structured tables inside the Scheme Information Documents (SIDs).
+*   **Dynamic Scraping**: Uses `Playwright` to navigate the Groww SPA (Single Page Application) and extract highly volatile metrics (NAV, Fund Size, Expense Ratio).
+*   **Static Extraction**: Uses `PyMuPDF` to parse official Scheme Information Documents (SIDs).
+*   **Unified Schema**: Both sources are unified into a strict JSON schema, ensuring that the RAG engine has a consistent view of each fund.
 
-### 2. The Vector Database (`phase2_rag`)
-We use `ChromaDB` for lightweight, on-disk storage inside `chroma_db/`. We use Google's Generative AI `gemini-embedding-001` model to create the vector embeddings instead of OpenAI or heavy local HuggingFace transformers. 
+### 2. The Hybrid Vector Store (`phase2_rag`)
+*   **Metadata Filtering (Namespace Pattern)**: To eliminate "Fund Mixing" (where the bot answers for the wrong fund), every chunk is tagged with a `fund_slug`. The retriever uses these tags to restrict search results to the relevant fund.
+*   **Embeddings**: Powered by Google’s `models/gemini-embedding-001` for high-dimensional semantic search.
 
-**Hybrid Prioritization**: The retriever is explicitly built with LangChain to prioritize Web document chunks when the query relates to rapidly-changing metrics (NAV, Fund Size), and PDF document chunks when the query relates to static rules (Exit Loads, Constraints).
+### 3. The Orchestration Layer (`phase3_api`)
+This is the "Brain" of the system, implementing three critical patterns:
+*   **Live Metrics Injection**: Volatile data (NAV) is injected directly into the LLM system prompt from a local `live_metrics.json` file. This bypasses vector search for time-sensitive data, ensuring 100% accuracy without re-indexing.
+*   **Multi-Stage Guardrails**: 
+    *   *Input*: Regex-based PII blocking (PAN/Aadhaar) and Scope Gate keywords.
+    *   *System*: Strict "No Investment Advice" instructions.
+    *   *Output*: Tag-based parsing to separate the factual answer from follow-up metadata.
+*   **Observability (Traces)**: Every user interaction is logged to `traces.jsonl` with full retrieval context, enabling offline debugging and evaluation.
 
-### 3. The Backend (`phase3_api`)
-We use `FastAPI` configured to `0.0.0.0` and listening on the dynamic `$PORT` environment variable to ensure Render health-check compatibilities. 
+### 4. The Discovery UI (`frontend`)
+Built with **Next.js 14** and **TailwindCSS**, the UI is designed to build user trust:
+*   **Glassmorphism Aesthetic**: High-end "frosted glass" containers with fund-aware dynamic theming (e.g., Orange for Hybrid, Purple for ELSS).
+*   **Source Highlighting**: The left sidebar dynamically highlights the specific documents used to generate the current response.
+*   **Interactive Pulse Chips**: LLM-generated follow-up questions pulse gently to guide the user's discovery path.
 
-**Guided Response Orchestration**: 
-The API performs a single-pass LLM call using a "3-in-1" prompt strategy. The LLM is instructed to return response data wrapped in structural tags (`[ANSWER]`, `[SOURCE_SUMMARIES]`, `[NEXT_STEPS]`).
-* **Tag-Based Parsing**: The backend implements an incremental state-machine parser that streams the answer content to the user immediately while buffering the metadata (summaries and follow-ups) to be sent as a structured JSON object at the end of the stream.
-* **Guardrails (`guardrails.py`)**: Enforces regex checks for standard Indian Tax Identifiers (PAN) and Social Identifiers (Aadhaar), and injects a strict System Prompt designed for beginner-friendly discovery.
+---
 
-### 4. The Frontend (`frontend` directory)
-We use `Next.js 14` with App Router. The `page.tsx` client component uses `TextDecoder` to parse the Server-Sent Event (SSE) stream returned by FastAPI in real-time. 
-* **Dynamic Discovery**: The UI replaces static chips with dynamic follow-up questions generated by the LLM based on the current context.
-* **Rich Citations**: Citation cards now display LLM-generated summaries explaining *why* a specific document is relevant to the answer, providing better transparency for beginner investors.
-* **Glassmorphism UI**: The UI utilizes custom `--glass-bg` TailwindCSS variables for a premium Fintech aesthetic.
+## 🔒 Security & Compliance
+*   **PII Sanitization**: Automatic 400 Bad Request if Indian tax/social identifiers are detected.
+*   **Zero-Advisory Logic**: Hard-refusal of opinionated queries (e.g., "should I buy?").
+*   **Grounding Enforcement**: System prompt mandates that if a fact isn't in the provided context, the bot must admit it doesn't know.

@@ -1,86 +1,64 @@
 # Groww AI Fact Engine 💰🤖
 
-A complete, end-to-end Retrieval-Augmented Generation (RAG) chatbot designed exclusively to provide strict, verified facts on Groww Mutual Funds through **Guided Information Discovery**. 
+A high-fidelity Retrieval-Augmented Generation (RAG) chatbot designed to provide strictly verified, factual data on Groww Mutual Funds. 
 
-Built with **FastAPI**, **Next.js**, **Playwright**, and **ChromaDB**, and powered by **Groq** (`llama-3.1-8b-instant`) and **Google Gemini** embeddings.
-
----
-
-## 🏗️ Architecture
-
-The application is structured into four distinct execution phases:
-
-1. **Phase 1 (Ingestion):** Playwright dynamically scrapes real-time mutual fund metrics (NAV, AUM, Expense Ratio) from Groww, while PyMuPDF parses the raw SID/KIM PDFs for hard rules (Exit Loads, Lock-ins).
-2. **Phase 2 (RAG & Knowledge Base):** The extracted data is unified, chunked, and embedded into local ChromaDB vectors using Gemini's `models/gemini-embedding-001`.
-3. **Phase 3 (Guided Facts API):** A FastAPI server exposes `/api/chat` with strict PII Guardrails. It uses a **single-pass LLM orchestration** strategy to generate factual answers, rich source summaries, and contextual follow-up questions in one stream.
-4. **Phase 4 (Guided Discovery UI):** A polished React app utilizing TailwindCSS for frosted-glass aesthetics. It dynamically renders LLM-generated follow-up chips and citation cards with plain-English summaries.
-
-*(See `ARCHITECTURE.md` for the full technical data flow).*
+Built with **FastAPI**, **Next.js 14**, **Playwright**, and **ChromaDB**, and powered by **Google Gemini-3-Flash** and **Gemini Embeddings**.
 
 ---
 
-## 📚 Source Data
+## 🏗️ Technical Architecture
 
-This knowledge base is strictly partitioned to factual details mapped from these official 4 funds on Groww:
-- **Groww Nifty 50 Index Fund Direct Growth**
-- **Groww Value Fund Direct Growth**
-- **Groww Aggressive Hybrid Fund Direct Growth**
-- **Groww ELSS Tax Saver Fund Direct Growth**
+The application is structured into four specialized execution phases, optimized for data integrity and real-time freshness:
 
-### Sample Q&A
+1. **Phase 1 (Knowledge Ingestion):** Uses **Playwright** to scrape dynamic metrics (NAV, AUM) and **PyMuPDF** to parse official SID/KIM PDFs for structural rules.
+2. **Phase 2 (Hybrid Vector Store):** Implements a **Namespace Metadata Pattern** in ChromaDB. Every document chunk is tagged with a `fund_slug`, enabling filtered retrieval that eliminates "fund-mixing" hallucinations.
+3. **Phase 3 (Intelligent API):** A FastAPI orchestration layer that features **Live Metrics Injection** (injecting real-time ground truth directly into prompts) and **Multi-Stage Guardrails** (blocking PII and Advisory queries).
+4. **Phase 4 (Premium Discovery UI):** A refined Next.js interface utilizing **Glassmorphism** aesthetics, dynamic fund-specific theming, and interactive follow-up "Pulse Chips."
 
-**Q: What is the Exit Load for the Value Fund?**
-> A: The exit load for Groww Value Fund Direct Growth is 0.005% (from July 1st, 2020) as a stamp duty on investment. [View Source]
-
-**Q: How do the NAVs compare?**
-> A: The Groww Nifty 50 Index Fund has an NAV of ₹10.23, while the Groww ELSS Tax Saver Fund has an NAV of ₹12.45. [View Source]
-
-**Q: What is the minimum SIP for each fund?**
-> A: 
-> * Groww Value Fund Direct Growth: ₹500
-> * Groww Aggressive Hybrid Fund Direct Growth: ₹500
-> * Groww ELSS Tax Saver Fund Direct Growth: ₹500
+*(See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full technical data flow and Mermaid diagrams).*
 
 ---
 
-## ⚠️ Disclaimer
+## 📚 Source Data & Scope
 
-This application is built for educational and technical demonstration purposes only. The LLM is actively instructed **not to provide investment advice**. Always perform independent research or consult a SEBI-registered advisory professional before making financial investments. The data shown here is retrieved dynamically from web properties and may be subject to parsing inaccuracies. 
+The knowledge base is strictly partitioned to 4 official Groww funds:
+*   **Groww Nifty 50 Index Fund** (Large-cap Index)
+*   **Groww Value Fund** (Value Equity)
+*   **Groww Aggressive Hybrid Fund** (Balanced Hybrid)
+*   **Groww ELSS Tax Saver Fund** (Tax Saving Equity)
+
+**Sources:** 16+ verified official public pages, including SIDs, KIMs, and live fund pages. (See [SOURCES.md](./SOURCES.md) for the full list).
+
+---
+
+## 🔒 Security & Compliance
+
+*   **PII Guardrails:** Automatic detection and blocking of Indian PAN and Aadhaar patterns.
+*   **Zero-Advisory Logic:** Hard-coded refusal of investment advice, recommendations, or predictions.
+*   **Factual Grounding:** Strict system prompts ensuring the model only answers based on provided context or real-time metrics.
+*   **Observability:** All RAG interactions are logged to `traces.jsonl` for transparent auditing.
 
 ---
 
 ## 🚀 Execution & Deployment
 
-### LOCAL DEVELOPMENT — STEP BY STEP
+### LOCAL DEVELOPMENT
 **Prerequisites:**
-* Python 3.10+ with venv activated
-* Node.js 18+ for the frontend
-* `.env` file with `GOOGLE_API_KEY` and `GROQ_API_KEY` set
+* Python 3.10+ & Node.js 18+
+* `.env` file with `GOOGLE_API_KEY` and `GROQ_API_KEY`
 
-**Step 1 — Download PDFs and scrape web data:**
+**Step 1 — Download & Scrape:**
 `python -m phase1_ingestion.run_ingestion`
-_Expected output: `data/pdfs/` populated, `data/unified_knowledge_base.json` created_
 
-**Step 2 — Embed into ChromaDB:**
+**Step 2 — Vector Indexing:**
 `python -m phase2_rag.ingest`
-_Expected output: `chroma_db/` populated, ~60 documents ingested_
-_Note: takes ~6 minutes on free Gemini tier due to rate limiting_
 
-**Step 3 — Verify everything with tests:**
-`python -m pytest tests/ -v`
-_Expected output: all tests pass except live LLM test if GROQ_API_KEY absent_
-
-**Step 4 — Start everything:**
+**Step 3 — Start Services:**
 `./start.sh`
-* Backend:  http://localhost:8080/health → `{"status":"ok"}`
-* Frontend: http://localhost:3000
-
-**Manual test queries to verify end to end:**
-* "What is the exit load for Groww Value Fund?"
-* "Who manages the Groww ELSS Tax Saver Fund?"
-* "What is the minimum SIP for Groww Nifty 50 Index Fund?"
-* "What is the NAV of SBI Bluechip Fund?"  ← must return scope block
-* "My PAN is ABCDE1234F"                   ← must return 400
+*   **Backend:** http://localhost:8080
+*   **Frontend:** http://localhost:3000
 
 ---
-*For Cloud Deployment, refer to the step-by-step CI/CD guides in `DEPLOYMENT.md` for seamless routing to Render (Backend) and Vercel (Frontend).*
+
+## ⚠️ Disclaimer
+This project is for educational purposes. The data is retrieved dynamically and may be subject to parsing delays. Always consult a SEBI-registered professional before investing.
