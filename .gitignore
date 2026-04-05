@@ -13,9 +13,7 @@ out/
 build/
 .DS_Store
 
-# ChromaDB
-chroma_db/
-*.sqlite3
+# ChromaDB (Committed for ephemeral cloud persistence)
 
 # Playwright
 *.pdf
