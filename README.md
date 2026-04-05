@@ -15,7 +15,7 @@ The application is structured into four specialized execution phases, optimized 
 3. **Phase 3 (Intelligent API):** A FastAPI orchestration layer that features **Live Metrics Injection** (injecting real-time ground truth directly into prompts) and **Multi-Stage Guardrails** (blocking PII and Advisory queries).
 4. **Phase 4 (Premium Discovery UI):** A refined Next.js interface utilizing **Glassmorphism** aesthetics, dynamic fund-specific theming, and interactive follow-up "Pulse Chips."
 
-*(See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full technical data flow and Mermaid diagrams).*
+*(See [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) for the full technical data flow and Mermaid diagrams).*
 
 ---
 
@@ -27,7 +27,7 @@ The knowledge base is strictly partitioned to 4 official Groww funds:
 *   **Groww Aggressive Hybrid Fund** (Balanced Hybrid)
 *   **Groww ELSS Tax Saver Fund** (Tax Saving Equity)
 
-**Sources:** 16+ verified official public pages, including SIDs, KIMs, and live fund pages. (See [SOURCES.md](./SOURCES.md) for the full list).
+**Sources:** 16+ verified official public pages, including SIDs, KIMs, and live fund pages. (See [docs/SOURCES.md](docs/SOURCES.md) for the full list).
 
 ---
 
@@ -36,7 +36,8 @@ The knowledge base is strictly partitioned to 4 official Groww funds:
 *   **PII Guardrails:** Automatic detection and blocking of Indian PAN and Aadhaar patterns.
 *   **Zero-Advisory Logic:** Hard-coded refusal of investment advice, recommendations, or predictions.
 *   **Factual Grounding:** Strict system prompts ensuring the model only answers based on provided context or real-time metrics.
-*   **Observability:** All RAG interactions are logged to `traces.jsonl` for transparent auditing.
+*   **Observability:** All RAG interactions are logged to `traces.jsonl` (ignored in git) for transparent auditing. 
+*   **Sample Q&A:** See [docs/SAMPLE_QA.md](docs/SAMPLE_QA.md) for verified examples.
 
 ---
 

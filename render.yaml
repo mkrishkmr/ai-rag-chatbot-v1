@@ -3,7 +3,7 @@ services:
     name: groww-fact-engine-api
     env: python
     plan: free
-    buildCommand: "./render-build.sh"
+    buildCommand: "./scripts/render-build.sh"
     startCommand: "uvicorn phase3_api.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
