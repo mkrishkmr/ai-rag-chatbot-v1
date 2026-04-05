@@ -35,19 +35,21 @@ sequenceDiagram
     
     Backend (FastAPI)->>Backend (FastAPI): Re-rank priority chunks
     
-    Backend (FastAPI)->>Groq (LLM): Stream generate with context + rules
+    Backend (FastAPI)->>Groq (LLM): Stream generate [ANSWER] + [SUMMARIES] + [NEXT_STEPS]
     activate Groq (LLM)
-    Groq (LLM)-->>Backend (FastAPI): Stream tokens
+    Groq (LLM)-->>Backend (FastAPI): Tagged Stream
     deactivate Groq (LLM)
     
-    Backend (FastAPI)-->>Frontend (Next.js): SSE Stream Sequence
+    Backend (FastAPI)->>Backend (FastAPI): Parse Tags & Extract Metadata
+    
+    Backend (FastAPI)-->>Frontend (Next.js): SSE Stream (Answer + JSON Metadata)
     deactivate Backend (FastAPI)
     
-    Frontend (Next.js)-->>User: UI Renders Stream + Source Cards
+    Frontend (Next.js)-->>User: Renders Answer + Dynamic Chips + Rich Source Cards
 ```
 
 ## Component Summary
 
-1. **Frontend**: Manages user input, chat history UI, Server-Sent Events parsing, and source card rendering. 
-2. **Backend**: Validates queries, maintains conversation memory, controls context extraction, and manages generation.
-3. **Database**: Persistent local ChromaDB containing 1644 chunks from 4 mutual funds. Embeddings are generated ahead of time using Google Gemini capabilities.
+1. **Frontend**: Manages user input, chat history UI, Server-Sent Events parsing, dynamic discovery chip rendering, and rich citation card display. 
+2. **Backend**: Validates queries, maintains conversation memory, controls context extraction, and manages the "3-in-1" generation strategy (Answer, Summaries, Follow-ups).
+3. **Database**: Persistent local ChromaDB containing ~1.6k chunks from 4 mutual funds. Embeddings are generated ahead of time using Google Gemini capabilities.
